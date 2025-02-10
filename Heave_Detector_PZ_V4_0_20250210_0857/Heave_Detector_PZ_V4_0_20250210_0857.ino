@@ -556,7 +556,8 @@ static void displayAllParams(
   M5.Lcd.fillScreen(TFT_BLACK);
 
   M5.Lcd.setTextColor(TFT_CYAN,TFT_BLACK);
-  M5.Lcd.printf("FROM IP: %s to Port: %d\n", WiFi.localIP().toString().c_str(), udpPort);
+  M5.Lcd.printf("MY IP: %s\n", WiFi.localIP().toString().c_str());
+  M5.Lcd.printf("Broadcast Port: %d\n", WIFI_UDP_PORT);
   M5.Lcd.printf("Filter: %.3f-%.1f Hz\n", LOW_CUTOFF_HZ, HIGH_CUTOFF_HZ);
 
   M5.Lcd.setTextColor(TFT_WHITE,TFT_BLACK);
