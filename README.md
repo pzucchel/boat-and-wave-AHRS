@@ -637,7 +637,7 @@ Below is the complete list of outputs:
 ## 8. Usage Summary for End Users
 
 - **Mount the Device:** Place the M5Atom S3 so that its axes align as closely as possible with the boat’s forward, starboard, and down directions.
-- **WiFi Configuration:** At startup, you can press “c” via the Serial Monitor within 5 seconds to upload new WiFi credentials. These credentials are stored non‑volatilely.
+- **WiFi Configuration:** At startup, you can press the button within 5 seconds to upload new WiFi credentials. These credentials are stored non‑volatilely.
 - **Operation:** The system displays key parameters on the onboard LCD and simultaneously broadcasts NMEA messages. Your marine software can read these messages to monitor sea state, detect slamming events, and assess the boat’s attitude.
 - **Calibration:** Although the system applies advanced filtering and integration, users may need to ensure proper sensor orientation. If the pitch, roll, and yaw outputs do not match expectations, verify that the sensor is mounted correctly or apply software corrections.
 
