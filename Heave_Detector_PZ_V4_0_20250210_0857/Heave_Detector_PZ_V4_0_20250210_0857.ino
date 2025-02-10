@@ -1,3 +1,4 @@
+#include <credentials.h> 
 #include <M5Unified.h>
 #include <M5AtomS3.h>
 #include <MadgwickAHRS.h>
@@ -39,8 +40,8 @@
 #define GRAVITY_MS2      9.80665
 
 // Wi-Fi
-const char* WIFI_SSID     = "Zucchelli";
-const char* WIFI_PASSWORD = "permesso";
+const char* WIFI_SSID     = "MYSSID";
+const char* WIFI_PASSWORD = "PYPWD";
 const int   WIFI_UDP_PORT = 10120;
 const int   WIFI_RETRY_MS = 2000;  // check wifi every 2s
 
