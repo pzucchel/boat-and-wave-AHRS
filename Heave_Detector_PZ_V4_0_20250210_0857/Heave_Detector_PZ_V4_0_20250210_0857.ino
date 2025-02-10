@@ -151,11 +151,12 @@ static double readVerticalAccelMPS2(){
     float gx, gy, gz;
     M5.Imu.getAccelData(&ax,&ay,&az);
     M5.Imu.getGyroData(&gx,&gy,&gz);
-    gx*=DEG_TO_RAD; gy*=DEG_TO_RAD; gz*=DEG_TO_RAD;
+
+ // debugged! not for this library, the input is in deg/s   
+ //   gx*=DEG_TO_RAD; gy*=DEG_TO_RAD; gz*=DEG_TO_RAD;
 
     Serial.printf("[DBG] IMU raw accel: %.3f, %.3f, %.3f gyro: %.3f, %.3f, %.3f\n",ax, ay, az, gx, gy, gz);
 
-//    madgwickFilter.begin(SAMPLE_FREQ); // ensure freq is set
     madgwickFilter.updateIMU(gx,gy,gz, ax,ay,az);
 
     Serial.printf("[DBG] Madgwick angles: pitch=%.2f deg, roll=%.2f deg, yaw=%.2f deg\n",
