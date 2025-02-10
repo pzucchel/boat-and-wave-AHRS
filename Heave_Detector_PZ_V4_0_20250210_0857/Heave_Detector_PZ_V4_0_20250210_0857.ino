@@ -566,15 +566,15 @@ static void displayAllParams(
   M5.Lcd.setTextColor(TFT_GREEN,TFT_BLACK);
   M5.Lcd.printf("Wav H=%.2f 1/3=%.2f\n", avgH, sigH);
   M5.Lcd.setTextColor(TFT_RED,TFT_BLACK);
-  M5.Lcd.printf("Z-Jerk =%.1f / %.1f \n", jerkInst, jerkInteg);
+  M5.Lcd.printf("Z-Jerk =%.1f / %.1f\n", jerkInst, jerkInteg);
 
   M5.Lcd.setTextColor(TFT_YELLOW,TFT_BLACK);
   M5.Lcd.printf("Beaufort= %d scale\n", beau);
 
   M5.Lcd.setTextColor(TFT_MAGENTA,TFT_BLACK);
-  M5.Lcd.printf("PitchA=%.1f RMS=%.1f \n", pAmp,pRms);
-  M5.Lcd.printf("RollA =%.1f RMS=%.1f \n", rAmp,rRms);
-  M5.Lcd.printf("YawA  =%.1f RMS=%.1f \n", yAmp,yRms);
+  M5.Lcd.printf("PitchA=%.1f RMS=%.1f\n", pAmp,pRms);
+  M5.Lcd.printf("RollA =%.1f RMS=%.1f\n", rAmp,rRms);
+  M5.Lcd.printf("YawA  =%.1f RMS=%.1f\n", yAmp,yRms);
 
 
   M5.Lcd.setTextColor(TFT_WHITE,TFT_BLACK);
