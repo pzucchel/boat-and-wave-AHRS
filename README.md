@@ -1,3 +1,83 @@
+Below is an example README.md file that explains—in simple terms—how the sensor is connected to WiFi using the implemented provisioning method:
+
+---
+
+# M5Stack AtomS3 WiFi Provisioning
+
+This project enables your M5Stack AtomS3 sensor to connect to your local 2.4 Ghz WiFi network without needing to reflash the firmware. It uses a “provisioning mode” that lets you enter your WiFi credentials using a simple web page.
+
+## How It Works
+
+When the sensor powers on, it checks if WiFi credentials have already been saved. If no credentials are found—or if you force configuration by pressing the built‑in button—it enters **Configuration Mode**. In this mode, the sensor:
+
+1. Creates its own WiFi network (Access Point) with the following default settings:  
+   - **SSID:** `M5Atoms3-Config`  
+   - **Password:** `provision`
+2. Displays a short set of instructions on the built‑in screen (using small text) that includes the SSID, password, and the URL to open.
+3. Starts a simple web server that serves a page where you can enter your local WiFi credentials.
+4. Saves the new credentials and restarts. On reboot, the sensor will attempt to connect to your WiFi network using the provided details.
+
+## Step-by-Step Instructions for Non-Experts
+
+1. **Power On the Sensor:**  
+   Simply plug in your M5Stack AtomS3 sensor.  
+   - If no WiFi credentials have been saved, the sensor automatically enters configuration mode.
+   - Alternatively, press the built‑in button at startup to force configuration mode.
+
+2. **Check the Built-in Display:**  
+   The screen will clear and show a concise message (using small text) that looks similar to this:
+
+   ```
+   CONFIG MODE
+   SSID: M5Atoms3-Config
+   PW: provision
+   URL: http://192.168.4.1
+   ```
+
+   *(Note: The URL may vary depending on your sensor’s AP IP address.)*
+
+3. **Connect Your Phone or Computer:**  
+   Open your WiFi settings and look for the network named **M5Atoms3-Config**.  
+   - Connect using the password **provision**.
+
+4. **Open the Provisioning Web Page:**  
+   Once connected to the sensor’s WiFi network, open your web browser and navigate to the URL shown on the sensor’s display (for example, `http://192.168.4.1`).
+
+5. **Enter Your WiFi Credentials:**  
+   You will see a simple web page with a form. Enter the SSID and password of your home (or office) WiFi network and submit the form.
+
+6. **Sensor Saves the Credentials:**  
+   The sensor will store your WiFi credentials and then reboot.  
+   After the restart, it will try to connect to your local WiFi network.
+
+7. **Normal Operation:**  
+   Once connected, the sensor will stop hosting its own AP and will operate normally as part of your local network.
+
+## Troubleshooting Tips
+
+- **No Connection?**  
+  If the sensor fails to connect to your WiFi network, try forcing configuration mode by holding the built‑in button during power-up and re-enter your credentials.
+
+- **Display Clutter:**  
+  In configuration mode, only a few key lines are shown on the screen. All detailed logs are sent to the Serial Monitor for debugging.
+
+- **Reconfiguring:**  
+  You can reconfigure the sensor at any time by starting it in configuration mode (by pressing the built‑in button at startup).
+
+## Dependencies
+
+- [M5Atom Library](https://github.com/m5stack/M5Atom)  
+- WiFi and WebServer libraries (included in the Arduino core for ESP32)  
+- Preferences library for storing data in non‑volatile memory
+
+## License
+
+This project is provided under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+
+
 Below is a **high‐level user guide** to the **Heave + Wave + Collision** measurement system, describing **what** the program does, **how** it presents results, and **which NMEA outputs** it sends. It's written for **end users** (e.g., boat operators or marine researchers) rather than developers diving into code details.
 
 ---
