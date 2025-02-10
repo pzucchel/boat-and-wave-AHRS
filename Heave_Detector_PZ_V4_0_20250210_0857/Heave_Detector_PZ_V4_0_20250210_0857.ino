@@ -561,10 +561,10 @@ static void displayAllParams(
   M5.Lcd.printf("Filter: %.3f-%.1f Hz\n", LOW_CUTOFF_HZ, HIGH_CUTOFF_HZ);
 
   M5.Lcd.setTextColor(TFT_WHITE,TFT_BLACK);
-  M5.Lcd.printf("Wav F=%.2f T=%.1f s\n", freqHz, periodSec);
+  M5.Lcd.printf("Wav F=%03.2f T=%03.1f s\n", freqHz, periodSec);
 
   M5.Lcd.setTextColor(TFT_GREEN,TFT_BLACK);
-  M5.Lcd.printf("Wav H=%.2f 1/3=%.2f\n", avgH, sigH);
+  M5.Lcd.printf("Wav H=%5.2f 1/3=%.2f\n", avgH, sigH);
   M5.Lcd.setTextColor(TFT_RED,TFT_BLACK);
   M5.Lcd.printf("Z-Jerk =%.1f / %.1f\n", jerkInst, jerkInteg);
 
@@ -572,15 +572,15 @@ static void displayAllParams(
   M5.Lcd.printf("Beaufort= %d scale\n", beau);
 
   M5.Lcd.setTextColor(TFT_MAGENTA,TFT_BLACK);
-  M5.Lcd.printf("PitchA=%.1f RMS=%.1f\n", pAmp,pRms);
-  M5.Lcd.printf("RollA =%.1f RMS=%.1f\n", rAmp,rRms);
-  M5.Lcd.printf("YawA  =%.1f RMS=%.1f\n", yAmp,yRms);
+  M5.Lcd.printf("PtchA=%03.0f RMS=%03.0f\n", pAmp,pRms);
+  M5.Lcd.printf("RollA=%03.0f RMS=%03.0f\n", rAmp,rRms);
+  M5.Lcd.printf("YawA =%03.0f RMS=%03.0f\n", yAmp,yRms);
 
 
   M5.Lcd.setTextColor(TFT_WHITE,TFT_BLACK);
-  M5.Lcd.printf("Pitch=%.1f deg\n", pNow);
-  M5.Lcd.printf("Roll =%.1f deg\n", rNow);
-  M5.Lcd.printf("Yaw  =%.1f deg\n", yNow);
+  M5.Lcd.printf("Pitch = %04.1f deg\n", pNow);
+  M5.Lcd.printf("Roll  = %04.1f deg\n", rNow);
+  M5.Lcd.printf("Yaw   = %04.1f deg\n", yNow);
 
   M5.Lcd.setTextColor(TFT_ORANGE,TFT_BLACK);
   M5.Lcd.printf("Coll. Acc.=%.1f m/s2\n", peakAccel);
