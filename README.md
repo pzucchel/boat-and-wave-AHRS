@@ -67,7 +67,7 @@ When the sensor powers on, it checks if WiFi credentials have already been saved
 
 This software runs on an **M5Atom S3** device (or similar M5 hardware with an IMU) to measure:
 
-1. **Wave Frequency & Height**: How often waves occur (their period) and how large they are (average height, significant height).  
+1. **Wave Frequency & Height**: How often waves occur (their period) and how large they are (average height, significant height as defined for meteo forecasts).  
 2. **Boat Motion** (Heave, Attitude):  
    - **Heave** (vertical displacement) is derived from the IMU’s acceleration, filtering out slow drifts and high‐frequency noise.  
    - **Attitude** (pitch, roll, and yaw angles) is tracked to see how the boat is oriented in real time.  
@@ -200,7 +200,7 @@ Any marine software listening on the local network can interpret these wave, col
 
 This wave measurement code provides a **complete** solution for:
 
-- **Wave frequency** & **height** (avg & significant),
+- **Wave frequency** & **height** (avg & significant, aka "meteo style"),
 - **Slamming** / jerk stats,
 - **Collision** detection parameters,
 - **Boat attitude** amplitude & RMS,
