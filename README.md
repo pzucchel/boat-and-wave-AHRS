@@ -557,6 +557,3 @@ The Madgwick filter fuses accelerometer and gyro data to calculate the orientati
 
 This project is provided under the MIT License. See the [LICENSE](LICENSE) file for details.
 
----
-
-Below is a **high‐level user guide** to the **Heave + Wave + Collision** measurement system, describing **what** the program does, **how** it presents results, and **which NMEA outputs** it sends. It's written for **end users** (e.g., boat operators or marine researchers) rather than developers diving into code details.
