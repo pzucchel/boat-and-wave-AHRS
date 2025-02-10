@@ -8,6 +8,8 @@
 #include <math.h>
 #include <vector>
 #include <algorithm>
+#include <WebServer.h>
+#include <Preferences.h>
 
 /*
   Wave + Slamming + Collision + Attitude + NMEA
@@ -40,8 +42,7 @@
 #define GRAVITY_MS2      9.80665
 
 // Wi-Fi
-const char* WIFI_SSID     = "MYSSID";
-const char* WIFI_PASSWORD = "PYPWD";
+
 const int   WIFI_UDP_PORT = 10120;
 const int   WIFI_RETRY_MS = 2000;  // check wifi every 2s
 
@@ -100,23 +101,191 @@ void initBandPass();
 double processBiquad(Biquad &bq, double in);
 void setHighPass(Biquad &bq, double freqHz, double Q, double sampFreq);
 void setLowPass(Biquad &bq,  double freqHz, double Q, double sampFreq);
+//===========================================
+// Configuration Section
+//===========================================
+namespace Config {
+  const char* apSSID     = "M5Atoms3-Config";
+  const char* apPassword = "provision";  // Change as needed
+  const uint16_t serverPort = 80;        // HTTP server port
+}
 
-// -------------- WIFI --------------
-void connectWiFi(){
-  WiFi.mode(WIFI_MODE_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  unsigned long start= millis();
-  while(WiFi.status()!=WL_CONNECTED && (millis()-start<20000)){
-    delay(250);
+//===========================================
+// Global Objects and Variables
+//===========================================
+Preferences preferences;
+WebServer server(Config::serverPort);
+
+String storedSSID;
+String storedPassword;
+bool provisioningMode = false;
+
+//===========================================
+// Display Helpers
+//===========================================
+
+// Initializes the display for a fresh start.
+void initializeDisplay() {
+  M5.begin();
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(WHITE);
+  // Set default text size for general logging if needed
+  M5.Lcd.setTextSize(1);
+}
+
+// This function prints a concise set of instructions that should fit on one screen.
+void displayProvisioningInstructions(IPAddress apIP) {
+  M5.Lcd.fillScreen(BLACK);  // Clear previous content
+  M5.Lcd.setCursor(0, 0);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.println("CONFIG MODE");
+  M5.Lcd.println("SSID: " + String(Config::apSSID));
+  M5.Lcd.println("PW: " + String(Config::apPassword));
+  M5.Lcd.println("URL: http://" + apIP.toString());
+}
+
+// Use this log function to print messages only to Serial.
+void logMessage(const String &message) {
+  Serial.println(message);
+}
+
+//===========================================
+// WiFi Credentials Management
+//===========================================
+void loadCredentials() {
+  preferences.begin("wifi", true);
+  storedSSID = preferences.getString("ssid", "");
+  storedPassword = preferences.getString("password", "");
+  preferences.end();
+}
+
+//===========================================
+// Provisioning Mode HTTP Handlers
+//===========================================
+void handleRoot() {
+  String html = "<!DOCTYPE html><html><head><title>WiFi Provisioning</title></head><body>";
+  html += "<h1>Enter WiFi Credentials</h1>";
+  html += "<form action='/save' method='POST'>";
+  html += "SSID: <input type='text' name='ssid'><br>";
+  html += "Password: <input type='password' name='password'><br>";
+  html += "<input type='submit' value='Save'>";
+  html += "</form></body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleSave() {
+  if (server.hasArg("ssid") && server.hasArg("password")) {
+    String newSSID = server.arg("ssid");
+    String newPassword = server.arg("password");
+    
+    // Save the new credentials
+    preferences.begin("wifi", false);
+    preferences.putString("ssid", newSSID);
+    preferences.putString("password", newPassword);
+    preferences.end();
+
+    String html = "<!DOCTYPE html><html><head><title>WiFi Provisioning</title></head><body>";
+    html += "<h1>Credentials Saved. Rebooting...</h1>";
+    html += "</body></html>";
+    server.send(200, "text/html", html);
+    
+    logMessage("Credentials saved. Rebooting...");
+    delay(2000);
+    ESP.restart();
+  } else {
+    server.send(400, "text/html", "Missing SSID or Password");
   }
 }
 
-void checkWiFi(){
-  if(WiFi.status()!=WL_CONNECTED){
-    WiFi.disconnect();
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+//===========================================
+// Provisioning Mode (AP Mode) Setup
+//===========================================
+void setupAPMode() {
+  provisioningMode = true;
+  logMessage("Entering Provisioning Mode (AP mode)");
+  
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(Config::apSSID, Config::apPassword);
+  IPAddress apIP = WiFi.softAPIP();
+  
+  // Display concise instructions that fit on one screen using text size 1.
+  displayProvisioningInstructions(apIP);
+  
+  // Setup HTTP server routes.
+  server.on("/", handleRoot);
+  server.on("/save", HTTP_POST, handleSave);
+  server.begin();
+  logMessage("HTTP server started in AP mode");
+}
+
+//===========================================
+// WiFi Station Mode Connection
+//===========================================
+void setupWiFiStationMode() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(storedSSID.c_str(), storedPassword.c_str());
+  logMessage("Attempting to connect to WiFi...");
+  
+  int timeout = 20;  // ~10 seconds total (20 * 500ms)
+  while (WiFi.status() != WL_CONNECTED && timeout > 0) {
+    delay(500);
+    timeout--;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    logMessage("WiFi connected successfully.");
+    logMessage("IP address: " + WiFi.localIP().toString());
+  } else {
+    logMessage("Failed to connect. Switching to provisioning mode.");
+    setupAPMode();
   }
 }
+
+//===========================================
+// Determine if Provisioning Mode is Needed
+//===========================================
+bool shouldEnterProvisioningMode() {
+  unsigned long start = millis();
+  bool buttonPressed = false;
+  while (millis() - start < 1000) {
+    M5.update();  // Update button state
+    if (M5.BtnA.isPressed()) {
+      buttonPressed = true;
+      break;
+    }
+    delay(10);
+  }
+  
+  if (buttonPressed) {
+    logMessage("Provision button pressed. Forcing provisioning mode.");
+    return true;
+  }
+  if (storedSSID == "") {
+    logMessage("No stored WiFi credentials found.");
+    return true;
+  }
+  logMessage("Found stored SSID: " + storedSSID);
+  return false;
+}
+
+//===========================================
+// Blocking Function to Wait Until Configured
+//===========================================
+void blockUntilConfigured() {
+  if (provisioningMode) {
+    while (true) {
+      server.handleClient();
+      delay(10);
+    }
+  }
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    logMessage("Waiting for WiFi connection...");
+  }
+}
+
+
+
 
 // -------------- KALMAN --------------
 static double kalmanFilter1D(double in){
@@ -387,6 +556,7 @@ static void displayAllParams(
   M5.Lcd.fillScreen(TFT_BLACK);
 
   M5.Lcd.setTextColor(TFT_CYAN,TFT_BLACK);
+  M5.Lcd.printf("FROM IP: %s to Port: %d\n", WiFi.localIP().toString().c_str(), udpPort);
   M5.Lcd.printf("Filter: %.3f-%.1f Hz\n", LOW_CUTOFF_HZ, HIGH_CUTOFF_HZ);
 
   M5.Lcd.setTextColor(TFT_WHITE,TFT_BLACK);
@@ -414,6 +584,7 @@ static void displayAllParams(
   M5.Lcd.setTextColor(TFT_ORANGE,TFT_BLACK);
   M5.Lcd.printf("Coll. Acc.=%.1f m/s2\n", peakAccel);
   M5.Lcd.printf("Coll. Jerk=%.1f m/s3\n", peakJerk);
+
 }
 
 // -------------- NMEA XDR --------------
@@ -433,16 +604,31 @@ static void sendNmeaXDR(const char* label,double val,const char* unit){
 
 // -------------- SETUP --------------
 void setup(){
-  M5.begin();
-  M5.Imu.init();
+
   Serial.begin(115200);
 
+  initializeDisplay();
+
+  loadCredentials();
+  
+  if (shouldEnterProvisioningMode()) {
+    setupAPMode();
+  } else {
+    setupWiFiStationMode();
+  }
+  
+  // Block until WiFi is configured (or never return in AP mode).
+  blockUntilConfigured();
+  
+  logMessage("WiFi is configured. Proceeding to main application...");
+
+  M5.begin();
+  M5.Imu.init();
 
   simStartMs= millis();
 
   madgwickFilter.begin(SAMPLE_FREQ);
 
-  connectWiFi();
   wifiUdp.begin(WIFI_UDP_PORT);
 
   sampleInterval= (unsigned long)(1e6 / SAMPLE_FREQ);
@@ -461,12 +647,7 @@ void setup(){
 
 // -------------- LOOP --------------
 void loop(){
-  M5.update();
-  if(millis()- lastWiFiMs >= WIFI_RETRY_MS){
-    lastWiFiMs= millis();
-    checkWiFi();
-  }
-
+  
   unsigned long nowUs= micros();
   if((nowUs - previousMicros) >= sampleInterval){
     previousMicros += sampleInterval;
