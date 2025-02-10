@@ -1,12 +1,9 @@
-Below is an example README.md file that explains—in simple terms—how the sensor is connected to WiFi using the implemented provisioning method:
 
----
-
-# M5Stack AtomS3 WiFi Provisioning
+# M5Stack AtomS3 WiFi connection first!
 
 This project enables your M5Stack AtomS3 sensor to connect to your local 2.4 Ghz WiFi network without needing to reflash the firmware. It uses a “provisioning mode” that lets you enter your WiFi credentials using a simple web page.
 
-## How It Works
+## How to connect it to your Wifi
 
 When the sensor powers on, it checks if WiFi credentials have already been saved. If no credentials are found—or if you force configuration by pressing the built‑in button—it enters **Configuration Mode**. In this mode, the sensor:
 
@@ -75,8 +72,6 @@ When the sensor powers on, it checks if WiFi credentials have already been saved
 This project is provided under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
-
-
 
 Below is a **high‐level user guide** to the **Heave + Wave + Collision** measurement system, describing **what** the program does, **how** it presents results, and **which NMEA outputs** it sends. It's written for **end users** (e.g., boat operators or marine researchers) rather than developers diving into code details.
 
