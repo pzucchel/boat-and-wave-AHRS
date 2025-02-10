@@ -47,7 +47,7 @@ const int   WIFI_RETRY_MS = 2000;  // check wifi every 2s
 
 // Band-pass corners
 #define LOW_CUTOFF_HZ   0.03   // remove drift below ~0.03 Hz (~33s period)
-#define HIGH_CUTOFF_HZ  1.0    // remove high freq above 1Hz
+#define HIGH_CUTOFF_HZ  0.5    // remove high freq above 1Hz
 
 // Simulation toggles
 bool   simulationMode   = false; // set true to test wave
