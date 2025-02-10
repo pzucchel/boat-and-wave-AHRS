@@ -1,5 +1,5 @@
 
-# M5Stack AtomS3 WiFi connection first!
+# 0. M5Stack AtomS3 WiFi connection first!
 
 This project enables your M5Stack AtomS3 sensor to connect to your local 2.4 Ghz WiFi network without needing to reflash the firmware. It uses a “provisioning mode” that lets you enter your WiFi credentials using a simple web page.
 
@@ -60,20 +60,6 @@ When the sensor powers on, it checks if WiFi credentials have already been saved
 
 - **Reconfiguring:**  
   You can reconfigure the sensor at any time by starting it in configuration mode (by pressing the built‑in button at startup).
-
-## Dependencies
-
-- [M5Atom Library](https://github.com/m5stack/M5Atom)  
-- WiFi and WebServer libraries (included in the Arduino core for ESP32)  
-- Preferences library for storing data in non‑volatile memory
-
-## License
-
-This project is provided under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-Below is a **high‐level user guide** to the **Heave + Wave + Collision** measurement system, describing **what** the program does, **how** it presents results, and **which NMEA outputs** it sends. It's written for **end users** (e.g., boat operators or marine researchers) rather than developers diving into code details.
 
 ---
 
@@ -210,7 +196,7 @@ Any marine software listening on the local network can interpret these wave, col
 
 ---
 
-### Summary
+### User-perspective Summary
 
 This wave measurement code provides a **complete** solution for:
 
@@ -228,7 +214,7 @@ Below is a **complete** reference describing **every** NMEA sentence the code se
 
 ---
 
-## 1. General NMEA XDR Format
+## A. General NMEA XDR Format
 
 Each parameter is transmitted once per second in an **NMEA 0183** “XDR” sentence, which has the following structure:
 
@@ -251,11 +237,11 @@ Here, `0.10` is the value (wave frequency in Hz), `HZ` is the unit, `Frequency` 
 
 ---
 
-## 2. Full List of Output Sentences
+## B. Full List of Output Sentences
 
 Below is a **complete** set of XDR messages sent by the code. Each line’s `<label>` matches the code’s `sendNmeaXDR(...)` call, and `<unit>` corresponds to the parameter’s dimension.
 
-### 2.1 Wave Frequency & Period
+### B.1 Wave Frequency & Period
 
 1. **Frequency**  
    - **Format**: `XDR,A,<value>,HZ,Frequency`  
@@ -267,7 +253,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
    - **Meaning**: The wave’s fundamental period in **seconds** (1 / frequency).  
    - **Typical Range**: ~1–30 s for typical seas.
 
-### 2.2 Wave Heights
+### B.2 Wave Heights
 
 3. **AvgWaveH**  
    - **Format**: `XDR,A,<value>,M,AvgWaveH`  
@@ -278,7 +264,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
    - **Format**: `XDR,A,<value>,M,SigWaveH`  
    - **Meaning**: The **significant** wave height in **meters** (average height of top 1/3 largest waves). Often considered a key oceanographic measure of sea state.
 
-### 2.3 Slamming / Jerk
+### B.3 Slamming / Jerk
 
 5. **InstJerk**  
    - **Format**: `XDR,A,<value>,M/S3,InstJerk`  
@@ -289,7 +275,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
    - **Format**: `XDR,A,<value>,M/S2,IntJerk`  
    - **Meaning**: The integrated absolute jerk over the entire buffer, in **m/s²** (dimension is effectively jerk × time). Helpful as a “slamming severity” measure.
 
-### 2.4 Beaufort
+### B.4 Beaufort
 
 7. **Beaufort**  
    - **Format**: `XDR,A,<value>,,Beaufort`  
@@ -297,7 +283,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
    - **Typical Range**: 0 = calm, 12 = hurricane‐force conditions.  
    - **Unit**: none, so `<unit>` is empty.
 
-### 2.5 Attitude Motion
+### B.5 Attitude Motion
 
 8. **PitchAmp**  
    - **Format**: `XDR,A,<value>,D,PitchAmp`  
@@ -336,7 +322,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
     - **Format**: `XDR,A,<value>,D,YawNow`  
     - **Meaning**: Current yaw (heading) angle in degrees.
 
-### 2.6 Collision / Peak Impact
+### B.6 Collision / Peak Impact
 
 17. **PeakAccel**  
     - **Format**: `XDR,A,<value>,M/S2,PeakAccel`  
@@ -349,7 +335,7 @@ Below is a **complete** set of XDR messages sent by the code. Each line’s `<la
 
 ---
 
-## 3. Example NMEA Output
+## C. Example NMEA Output
 
 A typical 1 s snapshot might look like:
 
@@ -378,7 +364,7 @@ Each line ends with `\r\n`. The hex after `*` is the **XOR checksum**.
 
 ---
 
-## 4. Summary for Users
+## D. Summary for Users
 
 - Every second, you receive **18** `$XDR` sentences over UDP broadcast, providing wave frequency/period, wave heights, jerk, collision metrics, and boat attitude angles.  
 - You can parse these in your marine software (e.g., a custom logger or a standard NMEA tool) to track sea state, wave intensities, boat motion, and potential collision risk.  
@@ -386,11 +372,10 @@ Each line ends with `\r\n`. The hex after `*` is the **XOR checksum**.
 
 Hence, the system’s NMEA messages comprehensively describe ocean wave conditions and boat dynamic behavior in an easily parsed, open‐standard format.
 
-Below is an example README.md that explains the mathematical principles underlying the system. You can use or adapt this file as documentation for your project.
 
 ---
 
-#5 Wave, Slamming, and Attitude Monitoring System
+# Wave, Slamming, and Attitude Monitoring Systems: the Theory
 
 This project runs on the M5Atom S3 and is designed to monitor a boat’s vertical motion (heave), wave frequency and height, rapid motion changes (jerk) associated with slamming or collisions, and the boat’s orientation (pitch, roll, and yaw). Data are displayed on the device’s built-in LCD and broadcast over Wi‑Fi in standard NMEA 0183 XDR sentences.
 
@@ -400,7 +385,7 @@ This section describes the mathematical principles behind the data processing, f
 
 ---
 
-## 1. Signal Acquisition and Conversion
+## AB. Signal Acquisition and Conversion
 
 ### 1.1 IMU Data
 
@@ -532,85 +517,6 @@ The Madgwick filter fuses accelerometer and gyro data to calculate the orientati
 
 ---
 
-## 6. NMEA 0183 XDR Output
-
-Every second, the system broadcasts 18 NMEA XDR sentences over UDP. Each sentence follows the format:
-
-```
-$XDR,A,<value>,<unit>,<label>*<checksum>\r\n
-```
-
-Below is the complete list of outputs:
-
-### Wave Frequency & Period
-- **Frequency:**  
-  - **Format:** `$XDR,A,xx.xx,HZ,Frequency*<CHK>\r\n`  
-  - **Meaning:** Dominant wave frequency in Hertz.
-- **Period:**  
-  - **Format:** `$XDR,A,xx.xx,S,Period*<CHK>\r\n`  
-  - **Meaning:** Wave period in seconds (inverse of frequency).
-
-### Wave Heights
-- **AvgWaveH:**  
-  - **Format:** `$XDR,A,xx.xx,M,AvgWaveH*<CHK>\r\n`  
-  - **Meaning:** Average crest-to-trough wave height in meters.
-- **SigWaveH:**  
-  - **Format:** `$XDR,A,xx.xx,M,SigWaveH*<CHK>\r\n`  
-  - **Meaning:** Significant wave height (average of the highest one-third of wave heights) in meters.
-
-### Slamming / Jerk Metrics
-- **InstJerk:**  
-  - **Format:** `$XDR,A,xx.xx,M/S3,InstJerk*<CHK>\r\n`  
-  - **Meaning:** Instantaneous jerk in m/s³.
-- **IntJerk:**  
-  - **Format:** `$XDR,A,xx.xx,M/S2,IntJerk*<CHK>\r\n`  
-  - **Meaning:** Integrated jerk over the ring buffer in m/s².
-
-### Beaufort Scale Estimate
-- **Beaufort:**  
-  - **Format:** `$XDR,A,xx.xx,,Beaufort*<CHK>\r\n`  
-  - **Meaning:** Approximate Beaufort number (0–12) derived from wave height. (No unit.)
-
-### Attitude Metrics
-- **PitchAmp:**  
-  - **Format:** `$XDR,A,xx.xx,D,PitchAmp*<CHK>\r\n`  
-  - **Meaning:** Peak-to-peak amplitude of pitch (degrees).
-- **RollAmp:**  
-  - **Format:** `$XDR,A,xx.xx,D,RollAmp*<CHK>\r\n`  
-  - **Meaning:** Peak-to-peak amplitude of roll (degrees).
-- **YawAmp:**  
-  - **Format:** `$XDR,A,xx.xx,D,YawAmp*<CHK>\r\n`  
-  - **Meaning:** Peak-to-peak amplitude of yaw (degrees).
-- **PitchRMS:**  
-  - **Format:** `$XDR,A,xx.xx,D,PitchRMS*<CHK>\r\n`  
-  - **Meaning:** RMS value of pitch (degrees).
-- **RollRMS:**  
-  - **Format:** `$XDR,A,xx.xx,D,RollRMS*<CHK>\r\n`  
-  - **Meaning:** RMS value of roll (degrees).
-- **YawRMS:**  
-  - **Format:** `$XDR,A,xx.xx,D,YawRMS*<CHK>\r\n`  
-  - **Meaning:** RMS value of yaw (degrees).
-- **PitchNow:**  
-  - **Format:** `$XDR,A,xx.xx,D,PitchNow*<CHK>\r\n`  
-  - **Meaning:** Current pitch angle (degrees).
-- **RollNow:**  
-  - **Format:** `$XDR,A,xx.xx,D,RollNow*<CHK>\r\n`  
-  - **Meaning:** Current roll angle (degrees).
-- **YawNow:**  
-  - **Format:** `$XDR,A,xx.xx,D,YawNow*<CHK>\r\n`  
-  - **Meaning:** Current yaw angle (degrees).
-
-### Collision / Peak Impact Metrics
-- **PeakAccel:**  
-  - **Format:** `$XDR,A,xx.xx,M/S2,PeakAccel*<CHK>\r\n`  
-  - **Meaning:** Peak acceleration (m/s²) over the last second.
-- **PeakJerk:**  
-  - **Format:** `$XDR,A,xx.xx,M/S3,PeakJerk*<CHK>\r\n`  
-  - **Meaning:** Peak jerk (m/s³) over the last second.
-
-*Each sentence ends with a carriage return and newline (`\\r\\n`). The checksum is computed by XORing all characters between `$` and `*`.*
-
----
 
 ## 7. Mathematical Principles Summary
 
@@ -641,6 +547,16 @@ Below is the complete list of outputs:
 - **Operation:** The system displays key parameters on the onboard LCD and simultaneously broadcasts NMEA messages. Your marine software can read these messages to monitor sea state, detect slamming events, and assess the boat’s attitude.
 - **Calibration:** Although the system applies advanced filtering and integration, users may need to ensure proper sensor orientation. If the pitch, roll, and yaw outputs do not match expectations, verify that the sensor is mounted correctly or apply software corrections.
 
+## Dependencies
+
+- [M5Atom Library](https://github.com/m5stack/M5Atom)  
+- WiFi and WebServer libraries (included in the Arduino core for ESP32)  
+- Preferences library for storing data in non‑volatile memory
+
+## License
+
+This project is provided under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 ---
 
-This README.md summarizes the mathematical foundations and output formats of the project while providing clear usage guidance for end‑users.
+Below is a **high‐level user guide** to the **Heave + Wave + Collision** measurement system, describing **what** the program does, **how** it presents results, and **which NMEA outputs** it sends. It's written for **end users** (e.g., boat operators or marine researchers) rather than developers diving into code details.
