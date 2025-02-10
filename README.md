@@ -385,3 +385,262 @@ Each line ends with `\r\n`. The hex after `*` is the **XOR checksum**.
 - If you want to test the system **without** real waves, you can enable `simulationMode`; the device will produce a purely synthetic wave of chosen period and height, then output these same `$XDR` lines for demonstration or calibration.
 
 Hence, the system’s NMEA messages comprehensively describe ocean wave conditions and boat dynamic behavior in an easily parsed, open‐standard format.
+
+Below is an example README.md that explains the mathematical principles underlying the system. You can use or adapt this file as documentation for your project.
+
+---
+
+#5 Wave, Slamming, and Attitude Monitoring System
+
+This project runs on the M5Atom S3 and is designed to monitor a boat’s vertical motion (heave), wave frequency and height, rapid motion changes (jerk) associated with slamming or collisions, and the boat’s orientation (pitch, roll, and yaw). Data are displayed on the device’s built-in LCD and broadcast over Wi‑Fi in standard NMEA 0183 XDR sentences.
+
+An optional simulation mode is provided so that users can test the system with a synthetic sinusoidal wave defined by a specified period and crest‑to‑trough height.
+
+This section describes the mathematical principles behind the data processing, filtering, and parameter estimation used in the code.
+
+---
+
+## 1. Signal Acquisition and Conversion
+
+### 1.1 IMU Data
+
+- **Accelerometer Data:**  
+  The sensor returns acceleration values in units of “g” (gravitational acceleration). These are later converted to m/s² by multiplying by the standard gravity (9.80665 m/s²).
+
+- **Gyroscope Data:**  
+  The gyroscope produces angular velocity in degrees per second. Before being used by the Madgwick filter, these values are converted to radians per second:
+  \[
+  \omega_{\text{rad/s}} = \omega_{\text{deg/s}} \times \frac{\pi}{180}
+  \]
+
+- **Madgwick Filter:**  
+  The filter fuses the accelerometer and gyroscope data to compute an orientation quaternion. From this quaternion, the filter extracts pitch, roll, and yaw angles (returned in degrees).  
+  *Note:* While the input (gyro) is converted to rad/s, the output angles are provided in degrees for human readability.
+
+---
+
+## 2. Band-Pass Filtering
+
+### 2.1 Purpose
+
+The raw vertical acceleration data contain unwanted components:
+- **Low-frequency drift:** Caused by sensor bias or slow changes in orientation.
+- **High-frequency noise:** Resulting from mechanical vibrations or sensor noise.
+
+A **band‑pass filter** is applied to retain only the frequencies associated with typical ocean waves (for example, between 0.03 Hz and 1.0 Hz).
+
+### 2.2 Filter Design
+
+Two 2nd‑order biquad filters are cascaded:
+- **High-Pass Filter:**  
+  Removes frequencies below the low cutoff (e.g., 0.03 Hz). Its continuous‑time transfer function is of the form:
+  \[
+  H_{\text{HP}}(s) = \frac{s^2}{s^2 + \frac{\omega_0}{Q}\, s + \omega_0^2}
+  \]
+  where \(\omega_0 = 2\pi \cdot \text{LOW\_CUTOFF\_HZ}\) and \(Q\) is the quality factor (typically 0.707 for a Butterworth response).
+
+- **Low-Pass Filter:**  
+  Removes frequencies above the high cutoff (e.g., 1.0 Hz) with a transfer function:
+  \[
+  H_{\text{LP}}(s) = \frac{\omega_0^2}{s^2 + \frac{\omega_0}{Q}\, s + \omega_0^2}
+  \]
+  where here \(\omega_0 = 2\pi \cdot \text{HIGH\_CUTOFF\_HZ}\).
+
+These filters are implemented in discrete time via difference equations (Direct Form II) in our code.
+
+---
+
+## 3. Integration and Wave Parameter Estimation
+
+### 3.1 Integration
+
+After filtering, the acceleration data are integrated twice to estimate:
+- **Velocity:**  
+  \[
+  v[k] = v[k-1] + a[k] \cdot \Delta t
+  \]
+- **Displacement (Heave):**  
+  \[
+  d[k] = d[k-1] + v[k] \cdot \Delta t
+  \]
+  
+Small biases in acceleration can integrate to significant displacement errors, so clamping is used if velocity or displacement exceed set limits.
+
+### 3.2 Wave Frequency Estimation
+
+The dominant wave frequency is determined using **zero‑cross detection** on the filtered acceleration data:
+- The average value is subtracted from the signal.
+- The code detects negative‑to‑positive zero crossings.
+- The average number of samples between crossings is computed and, with the known sampling frequency, converted to a period \(T\) and frequency \(f = \frac{1}{T}\).
+
+### 3.3 Wave Height Calculation
+
+The integrated displacement signal is analyzed to determine wave heights:
+- The signal is centered by subtracting its mean.
+- Zero‑crossing detection on the displacement signal segments the data into individual wave cycles.
+- For each cycle, the local minimum and maximum are found.
+- **Average Wave Height (AH):** The mean crest‑to‑trough amplitude across all cycles.
+- **Significant Wave Height (SH):** The average amplitude of the largest one‑third of cycles.
+
+In the case of an ideal sinusoid \(y(t) = A \sin(\omega t)\), the crest‑to‑trough distance is \(2A\).
+
+---
+
+## 4. Slamming (Jerk) and Collision Metrics
+
+### 4.1 Jerk Calculation
+
+- **Instantaneous Jerk:**  
+  Jerk is defined as the derivative of acceleration:
+  \[
+  j[k] \approx \frac{a[k] - a[k-1]}{\Delta t}
+  \]
+  This value is computed using the most recent two samples.
+
+- **Integrated Jerk:**  
+  The system also computes the sum of the absolute jerk values over the ring buffer (scaled by the time interval), providing an overall measure of “slamming” intensity.
+
+### 4.2 Collision Detection
+
+In addition, the code scans the most recent 1‑second segment of data to find:
+- **Peak Acceleration (PeakAccel)**
+- **Peak Jerk (PeakJerk)**
+  
+These parameters serve as indicators of potentially damaging collisions or slamming events on the hull.
+
+---
+
+## 5. Attitude (Orientation) Estimation
+
+### 5.1 Madgwick Filter
+
+The Madgwick filter fuses accelerometer and gyro data to calculate the orientation (in quaternions). From these quaternions, the filter computes:
+- **Pitch:** Rotation about the sensor’s X‑axis.
+- **Roll:** Rotation about the sensor’s Y‑axis.
+- **Yaw:** Rotation about the sensor’s Z‑axis.
+
+### 5.2 Attitude Metrics
+
+- **Peak-to-Peak Amplitude:**  
+  The maximum difference in pitch, roll, and yaw over the ring buffer.
+- **RMS Values:**  
+  The root‑mean‑square of the pitch, roll, and yaw values over time.
+- **Current Angles:**  
+  The most recent pitch, roll, and yaw values.
+
+*Note:* Because gyroscopes provide angular velocity, the Madgwick filter integrates these values (while fusing them with accelerometer data) to compute absolute angles. The code converts the gyro values from deg/s to rad/s before passing them to the filter; the filter then outputs the orientation angles in degrees.
+
+---
+
+## 6. NMEA 0183 XDR Output
+
+Every second, the system broadcasts 18 NMEA XDR sentences over UDP. Each sentence follows the format:
+
+```
+$XDR,A,<value>,<unit>,<label>*<checksum>\r\n
+```
+
+Below is the complete list of outputs:
+
+### Wave Frequency & Period
+- **Frequency:**  
+  - **Format:** `$XDR,A,xx.xx,HZ,Frequency*<CHK>\r\n`  
+  - **Meaning:** Dominant wave frequency in Hertz.
+- **Period:**  
+  - **Format:** `$XDR,A,xx.xx,S,Period*<CHK>\r\n`  
+  - **Meaning:** Wave period in seconds (inverse of frequency).
+
+### Wave Heights
+- **AvgWaveH:**  
+  - **Format:** `$XDR,A,xx.xx,M,AvgWaveH*<CHK>\r\n`  
+  - **Meaning:** Average crest-to-trough wave height in meters.
+- **SigWaveH:**  
+  - **Format:** `$XDR,A,xx.xx,M,SigWaveH*<CHK>\r\n`  
+  - **Meaning:** Significant wave height (average of the highest one-third of wave heights) in meters.
+
+### Slamming / Jerk Metrics
+- **InstJerk:**  
+  - **Format:** `$XDR,A,xx.xx,M/S3,InstJerk*<CHK>\r\n`  
+  - **Meaning:** Instantaneous jerk in m/s³.
+- **IntJerk:**  
+  - **Format:** `$XDR,A,xx.xx,M/S2,IntJerk*<CHK>\r\n`  
+  - **Meaning:** Integrated jerk over the ring buffer in m/s².
+
+### Beaufort Scale Estimate
+- **Beaufort:**  
+  - **Format:** `$XDR,A,xx.xx,,Beaufort*<CHK>\r\n`  
+  - **Meaning:** Approximate Beaufort number (0–12) derived from wave height. (No unit.)
+
+### Attitude Metrics
+- **PitchAmp:**  
+  - **Format:** `$XDR,A,xx.xx,D,PitchAmp*<CHK>\r\n`  
+  - **Meaning:** Peak-to-peak amplitude of pitch (degrees).
+- **RollAmp:**  
+  - **Format:** `$XDR,A,xx.xx,D,RollAmp*<CHK>\r\n`  
+  - **Meaning:** Peak-to-peak amplitude of roll (degrees).
+- **YawAmp:**  
+  - **Format:** `$XDR,A,xx.xx,D,YawAmp*<CHK>\r\n`  
+  - **Meaning:** Peak-to-peak amplitude of yaw (degrees).
+- **PitchRMS:**  
+  - **Format:** `$XDR,A,xx.xx,D,PitchRMS*<CHK>\r\n`  
+  - **Meaning:** RMS value of pitch (degrees).
+- **RollRMS:**  
+  - **Format:** `$XDR,A,xx.xx,D,RollRMS*<CHK>\r\n`  
+  - **Meaning:** RMS value of roll (degrees).
+- **YawRMS:**  
+  - **Format:** `$XDR,A,xx.xx,D,YawRMS*<CHK>\r\n`  
+  - **Meaning:** RMS value of yaw (degrees).
+- **PitchNow:**  
+  - **Format:** `$XDR,A,xx.xx,D,PitchNow*<CHK>\r\n`  
+  - **Meaning:** Current pitch angle (degrees).
+- **RollNow:**  
+  - **Format:** `$XDR,A,xx.xx,D,RollNow*<CHK>\r\n`  
+  - **Meaning:** Current roll angle (degrees).
+- **YawNow:**  
+  - **Format:** `$XDR,A,xx.xx,D,YawNow*<CHK>\r\n`  
+  - **Meaning:** Current yaw angle (degrees).
+
+### Collision / Peak Impact Metrics
+- **PeakAccel:**  
+  - **Format:** `$XDR,A,xx.xx,M/S2,PeakAccel*<CHK>\r\n`  
+  - **Meaning:** Peak acceleration (m/s²) over the last second.
+- **PeakJerk:**  
+  - **Format:** `$XDR,A,xx.xx,M/S3,PeakJerk*<CHK>\r\n`  
+  - **Meaning:** Peak jerk (m/s³) over the last second.
+
+*Each sentence ends with a carriage return and newline (`\\r\\n`). The checksum is computed by XORing all characters between `$` and `*`.*
+
+---
+
+## 7. Mathematical Principles Summary
+
+- **Filtering:**  
+  The band‑pass filter uses two cascaded 2nd‑order biquad filters to remove both very low and very high frequencies. This preserves the frequency components associated with ocean waves.
+  
+- **Integration:**  
+  Acceleration is integrated over time to yield velocity and then displacement. In a simple sinusoid \(x(t) = A \sin(\omega t)\), the acceleration is \(a(t) = -\omega^2 A \sin(\omega t)\). Thus, the amplitude \(A\) (and hence the crest‑to‑trough wave height of \(2A\)) can be estimated from the acceleration if \(\omega\) is known.
+
+- **Zero-Cross Detection:**  
+  Both the wave frequency and the wave height calculations rely on detecting zero crossings (when the signal goes from negative to positive). The average interval between these crossings yields the wave period; the difference between local minima and maxima (between crossings) gives the wave height.
+
+- **Jerk:**  
+  Jerk is calculated as the discrete derivative of acceleration. Instantaneous jerk uses two successive samples, while integrated jerk sums the absolute values over the measurement window.
+
+- **Attitude Estimation:**  
+  The Madgwick filter uses a quaternion-based algorithm to fuse accelerometer and gyro data. Gyro values (converted to rad/s) are integrated, and an error-correction term (scaled by a gain parameter) is applied to compute pitch, roll, and yaw.
+
+- **NMEA Output:**  
+  The computed values are then formatted in NMEA 0183 XDR sentences, a standard marine data format, for integration with other shipboard systems.
+
+---
+
+## 8. Usage Summary for End Users
+
+- **Mount the Device:** Place the M5Atom S3 so that its axes align as closely as possible with the boat’s forward, starboard, and down directions.
+- **WiFi Configuration:** At startup, you can press “c” via the Serial Monitor within 5 seconds to upload new WiFi credentials. These credentials are stored non‑volatilely.
+- **Operation:** The system displays key parameters on the onboard LCD and simultaneously broadcasts NMEA messages. Your marine software can read these messages to monitor sea state, detect slamming events, and assess the boat’s attitude.
+- **Calibration:** Although the system applies advanced filtering and integration, users may need to ensure proper sensor orientation. If the pitch, roll, and yaw outputs do not match expectations, verify that the sensor is mounted correctly or apply software corrections.
+
+---
+
+This README.md summarizes the mathematical foundations and output formats of the project while providing clear usage guidance for end‑users.
