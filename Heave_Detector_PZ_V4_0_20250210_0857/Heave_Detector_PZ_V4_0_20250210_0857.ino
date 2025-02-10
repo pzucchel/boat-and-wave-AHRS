@@ -1,4 +1,4 @@
-#include <credentials.h> 
+#include <credentials.h> //put your own MYSSID and MYPWD Wifi credentials
 #include <M5Unified.h>
 #include <M5AtomS3.h>
 #include <MadgwickAHRS.h>
